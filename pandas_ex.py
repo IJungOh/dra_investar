@@ -1,4 +1,4 @@
-# Pandas 실습
+# Pandas 실습 (modified GitHub)
 # 실용 단축키
 # a. 소괄호 밖 탈출 & 다음 라인으로 이동 : ctrl + shift + enter
 # b. 주석처리 : ctrl + /
