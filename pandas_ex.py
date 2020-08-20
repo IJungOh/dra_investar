@@ -43,14 +43,57 @@ print(s.loc[8.0])   # loc -> 실제 인덱스 값의로 값 구하기
 
 # 6. Data 삭제
 # s = s.drop(8.0)  # append와 마찬가지로 결과를 s에 대입해야 함
-
 print(s.describe())
 
 # 7. 시리즈 맷플롯립으로 출력
-plt.title("ELLIOTT_WAVE")
-plt.plot(s, 'bs--')
-plt.xticks(s.index)
-plt.yticks(s.values)
-plt.grid(True)
-plt.show()
+# plt.title("ELLIOTT_WAVE")
+# plt.plot(s, 'bs--')
+# plt.xticks(s.index)
+# plt.yticks(s.values)
+# plt.grid(True)
+# plt.show()
 
+# -----------------------------------------------------------------------------------------------------
+# 8. DataFrame 생성
+# 2014년 ~ 2018년 까지 kospi와 kosdaq 지수로 생성 => 해당 지수는 생성자 인수에 딕셔너리 형태로 생성
+df = pd.DataFrame({'KOSPI': [1915, 1961, 2026, 2467, 2041],
+                   'KOSDAQ': [542, 682, 631, 798, 675]},
+                  index=[2014, 2015, 2016, 2017, 2018])
+print(df)
+print(df.describe())
+print(df.info())
+
+# 8-1. 복수의 시리즈로 DataFrame 생성
+# 각각 시리즈 생성해서 딕셔러니 형태로 결합
+kospi = pd.Series([1915, 1961, 2026, 2467, 2041],
+                  index=[2014, 2015, 2016, 2017, 2018], name='KOSPI')
+print(kospi)
+kosdaq = pd.Series([542, 682, 631, 798, 675],
+                   index=[2014, 2015, 2016, 2017, 2018], name='KOSDAQ')
+print(kosdaq)
+
+df = pd.DataFrame({kospi.name: kospi, kosdaq.name: kosdaq})
+print(df)
+
+# 8-2. 리스트를 이용한 DataFrame 생성
+# 빈 리스트 생성해서 append로 한 행씩 추가해서 생성
+columns = ['KOSPI', 'KOSDAQ']
+index = [2014, 2015, 2016, 2017, 2018]
+rows = []  # 빈리스트 생성
+rows.append([1915, 542])
+rows.append([1961, 682])
+rows.append([2026, 631])
+rows.append([2467, 798])
+rows.append([2041, 675])
+df = pd.DataFrame(rows, columns=columns, index=index)   # 리스트를 생성자에 바로 입력
+print(df)
+
+# 9. DataFrame iteration 처리
+# 9-1. 인덱스를 사용해서 처리
+for i in df.index:
+    print(i, df['KOSPI'][i], df['KOSDAQ'][i])
+
+# 9-2. intertuples 사용해서 처리 (namedtuple)
+for row in df.itertuples(name='KRX'):
+    print(row)
+    print(row[0], row[1], row[2])
