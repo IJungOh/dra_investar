@@ -10,4 +10,11 @@ import yfinance as yf
 
 yf.pdr_override()
 sec = pdr.get_data_yahoo('063160.KS', start='2020-08-17')
-print(sec.head(2))
+msft = pdr.get_data_yahoo('MSFT', start='2018-05-04')
+
+print(sec)
+
+tmp_msft = msft.drop(columns='Volume')  # 거래량 컬럼 삭제
+print(tmp_msft.tail())  # tail()은 최근 5개 데이타 출력
+
+print(sec.index)
