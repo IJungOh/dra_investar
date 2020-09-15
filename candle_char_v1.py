@@ -23,4 +23,11 @@ df = df.sort_values(by='Date')
 df.index = pd.to_datetime(df.Date)
 df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
 
-mpf.plot(df, title='Celltrion candle chart', type='candle')
+# mpf.plot(df, title='Celltrion candle chart', type='candle')
+
+kwargs = dict(title='Cellrion customized chart', type='candle', mav=(2, 4, 6), volume=True, ylabel='ohlc candles')
+mc = mpf.make_marketcolors(up='r', down='b', inherit=True)
+s = mpf.make_mpf_style(marketcolors=mc)
+mpf.plot(df, **kwargs, style=s)
+
+
