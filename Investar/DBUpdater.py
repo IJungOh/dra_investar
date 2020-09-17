@@ -6,7 +6,7 @@ class DBUpdater:
     def __init__(self):
         """생성자: MariaDB 연결 및 종목코드 딕셔너리 생성"""
         self.conn = pymysql.connect(host='localhost', user='root', password='admin',
-                                    db='inverstar', charset='utf8')
+                                    db='investar', charset='utf8')
         with self.conn.cursor() as curs:
             sql = """
             CREATE TABLE if NOT EXISTS company_info (
@@ -38,6 +38,7 @@ class DBUpdater:
         
     def __del__(self):
         """소멸자: MariaDB 연결 해제"""
+        self.update_comp_info()
 
     def read_krx_code(self):
         """KRX로부터 상장법인목록 파일을 읽어와서 데이터프레임으로 반환"""
