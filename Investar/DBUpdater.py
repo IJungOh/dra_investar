@@ -42,16 +42,19 @@ class DBUpdater:
         self.conn.commit()
 
         self.codes = dict()
-        
+
     def __del__(self):
         """소멸자: MariaDB 연결 해제"""
         self.conn.close()
 
     def read_krx_code(self):
         """KRX로부터 상장법인목록 파일을 읽어와서 데이터프레임으로 반환"""
-        url = 'https://kind.krx.co.kr/corpgeneral/corpList.do?method='\
-            'download&searchType=13'
-        krx = pd.read_html(url, header=0)[0]
+        """테스트를 위해 한종목만 생성-"""
+        # url = 'https://kind.krx.co.kr/corpgeneral/corpList.do?method=' \
+        #       'download&searchType=13'
+        # krx = pd.read_html(url, header=0)[0]
+        url = 'C:/Project/Investment/document/stock_list.xlsx'
+        krx = pd.read_excel(url, sheet_name='list', header=0)
         krx = krx[['종목코드', '회사명']]
         krx = krx.rename(columns={'종목코드': 'code', '회사명': 'company'})
         krx.code = krx.code.map('{:06d}'.format)
@@ -71,22 +74,23 @@ class DBUpdater:
             curs.execute(sql)
             rs = curs.fetchone()
             today = datetime.today().strftime('%Y-%m-%d')
+            print('WooHoo' + today)
 
             if rs[0] == None or rs[0].strftime('%Y-%m-%d') < today:
                 krx = self.read_krx_code()
                 for idx in range(len(krx)):
                     code = krx.code.values[idx]
                     company = krx.company.values[idx]
-                    sql = f"REPLACE INTO company_info (code, company, last_update)"\
-                        f"VALUES ('{code}', '{company}', '{today}')"
+                    sql = f"REPLACE INTO company_info (code, company, last_update)" \
+                          f"VALUES ('{code}', '{company}', '{today}')"
                     curs.execute(sql)
                     self.codes[code] = company
                     tmnow = datetime.now().strftime('%Y-%m-%d %H:%M')
                     print(f"[{tmnow}] {idx:04d} REPLACE INTO company_info " \
-                        f"VALUES ({code}, {company}, {today})")
+                          f"VALUES ({code}, {company}, {today})")
 
-                    self.conn.commit()
-                    print('')
+                self.conn.commit()
+                print('')
 
     def read_naver(self, code, company, pages_to_fetch):
         """네이버 금융에서 주식 시세를 읽어서 데이터프레임으로 반환"""
@@ -113,13 +117,13 @@ class DBUpdater:
                       format(tmnow, company, code, page, pages), end="\r")
 
             df = df.rename(columns={'날짜': 'date', '종가': 'close', '전일비': 'diff', '시가': 'open', '고가': 'high',
-                           '저가': 'low', '거래량': 'volume'})
+                                    '저가': 'low', '거래량': 'volume'})
             df['date'] = df['date'].replace('.', '-')
             df = df.dropna()
             # 마리아 DB에서 BIGINT로 지정한 컬럼의 데이터형을 INT로 변경
             df[['close', 'diff', 'open', 'high', 'low', 'volume']] = df[['close', 'diff', 'open', 'high',
-                                                                        'low', 'volume']].astype(int)
-            
+                                                                         'low', 'volume']].astype(int)
+
             # 원하는 순서로 컬럼순서 변경
             df = df[['date', 'open', 'high', 'low', 'close', 'diff', 'volume']]
 
@@ -132,19 +136,18 @@ class DBUpdater:
         """네이버 금융에서 읽어온 주식 시세를 DB에 REPLACE"""
         with self.conn.cursor() as curs:
             for r in df.itertuples():
-                sql = f"REPLACE INTO daily_price VALUES ('{code}',  "\
-                    f"'{r.date}', {r.open}, {r.high}, {r.low}, {r.close}, "\
-                    f"{r.diff}, {r.volume})"
-            curs.execute(sql)
-
-        self.conn.commit()
-        print('[{}] #{:04d} {} ({}) : {} rows > REPLACE INTO daily_'\
-              'price [OK]'.format(datetime.now().strftime('%Y-%m-%d'\
+                sql = f"REPLACE INTO daily_price VALUES ('{code}',  " \
+                      f"'{r.date}', {r.open}, {r.high}, {r.low}, {r.close}, " \
+                      f"{r.diff}, {r.volume})"
+                curs.execute(sql)
+            self.conn.commit()
+        print('[{}] #{:04d} {} ({}) : {} rows > REPLACE INTO daily_' \
+              'price [OK]'.format(datetime.now().strftime('%Y-%m-%d' \
                                                           ' %H:%M'), num + 1, company, code, len(df)))
 
     def update_daily_price(self, pages_to_fetch):
         """KRX 상장법인의 주식 시세를 네이버로부터 읽어서 DB에 업데이트"""
-        for idx, code in enumerate(self.codes): # codes 딕셔너리에 저장된 종목 처리
+        for idx, code in enumerate(self.codes):  # codes 딕셔너리에 저장된 종목 처리
             df = self.read_naver(code, self.codes[code], pages_to_fetch)
             if df is None:
                 continue
@@ -162,7 +165,7 @@ class DBUpdater:
             with open('config.json', 'w') as out_file:
                 page_to_fetch = 100
                 config = {'page_to_fetch': 1}
-                json.dump(config, out_file) # json객체를 config.json 파일에 쓰기
+                json.dump(config, out_file)  # json객체를 config.json 파일에 쓰기
 
         self.update_daily_price(page_to_fetch)
 
@@ -171,11 +174,11 @@ class DBUpdater:
         lastday = calendar.monthrange(tmnow.year, tmnow.month)[1]
 
         if tmnow.month == 12 and tmnow.day == lastday:  # 연마지막날이면,
-            tmnext = tmnow.replace(year=tmnow.year+1, month=1, day=1, hour=17, minute=0, second=0)
+            tmnext = tmnow.replace(year=tmnow.year + 1, month=1, day=1, hour=17, minute=0, second=0)
         elif tmnow.day == lastday:
-            tmnext = tmnow.replace(month=tmnow.month+1, day=1, hour=17, minute=0, second=0)
+            tmnext = tmnow.replace(month=tmnow.month + 1, day=1, hour=17, minute=0, second=0)
         else:
-            tmnext = tmnow.replace(day=tmnow.day+1, hour=17, minute=0, second=0)
+            tmnext = tmnow.replace(day=tmnow.day + 1, hour=17, minute=0, second=0)
 
         tmdiff = tmnext - tmnow
         secs = tmdiff.seconds
